@@ -465,16 +465,19 @@ if [ "$FULLTEXTSEARCH_ENABLED" = 'yes' ]; then
     php /var/www/html/occ fulltextsearch_elasticsearch:configure "{\"elastic_host\":\"http://$FULLTEXTSEARCH_HOST:9200\",\"elastic_index\":\"nextcloud-aio\"}"
     php /var/www/html/occ files_fulltextsearch:configure "{\"files_pdf\":\"1\",\"files_office\":\"1\"}"
 
-    # Do the index
-    if ! [ -f "/mnt/ncdata/fts-index.done" ]; then
-        echo "Waiting 10s before activating FTS..."
-        sleep 10
-        echo "Activating fulltextsearch..."
-        if php /var/www/html/occ fulltextsearch:test && php /var/www/html/occ fulltextsearch:index; then
-            touch "/mnt/ncdata/fts-index.done"
-        else
-            echo "Fulltextsearch failed. Could not index."
-        fi
+    # Test FTS index
+    echo "Waiting 10s before testing FTS..."
+    sleep 10
+
+    echo "Testing fulltextsearch..."
+    #Remove test result file if it exists
+    rm -f "/mnt/ncdata/fts-test.done" > /dev/null 2>&1
+
+    if php /var/www/html/occ fulltextsearch:test -q; then
+        echo "Fulltextsearch test successful. Will activate indexer..."
+        touch "/mnt/ncdata/fts-test.done"
+    else
+        echo "Fulltextsearch test failed. Will not activate indexer"
     fi
 else
     if [ -d "/var/www/html/custom_apps/fulltextsearch" ]; then
